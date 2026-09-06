@@ -23,7 +23,7 @@ def read_metadata(path: Path, folder_name: str, expected_type: str, expected_fra
         metadata = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError(f"metadata inválida en {path}: {exc}") from exc
-    required = ("name", "model_type", "source", "revision", "framework", "python_target", "downloaded_at_utc")
+    required = ("name", "model_type", "source", "revision", "framework", "license", "python_target", "downloaded_at_utc", "validation")
     missing = [key for key in required if key not in metadata]
     if missing:
         raise ValueError(f"metadata incompleta en {path}: falta {', '.join(missing)}")
@@ -31,6 +31,8 @@ def read_metadata(path: Path, folder_name: str, expected_type: str, expected_fra
         raise ValueError(f"metadata inconsistente en {path}")
     if metadata["name"] != folder_name:
         raise ValueError(f"el nombre en metadata no coincide con la carpeta: {path}")
+    if metadata["validation"].get("status") != "passed":
+        raise ValueError(f"modelo sin validación aprobada: {path}")
     return metadata
 
 
@@ -47,6 +49,9 @@ def main() -> int:
                 metadata_path = folder / "model-metadata.json"
                 if not metadata_path.is_file():
                     raise ValueError(f"modelo incompleto: falta {metadata_path}")
+                validation_path = folder / "validation.ipynb"
+                if not validation_path.is_file():
+                    raise ValueError(f"modelo incompleto: falta {validation_path}")
                 metadata = read_metadata(metadata_path, folder.name, model_type, framework)
                 files = []
                 paths = sorted((p for p in folder.rglob("*") if p.is_file()), key=lambda item: item.relative_to(folder).as_posix())

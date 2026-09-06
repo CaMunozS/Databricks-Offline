@@ -1,5 +1,68 @@
 {
-  "generated_at_utc": "2026-09-06T19:32:49.404319Z",
+  "generated_at_utc": "2026-09-06T20:53:49.648226Z",
   "python_target": "3.11",
-  "models": []
+  "models": [
+    {
+      "name": "paraphrase-multilingual-MiniLM-L12-v2",
+      "type": "embedding",
+      "relative_path": "models/embeddings/paraphrase-multilingual-MiniLM-L12-v2",
+      "files": [
+        {
+          "path": "1_Pooling/config.json",
+          "bytes": 94,
+          "sha256": "bb80272f7adad76ce93073c25e18113ee66be1e91f60bcdd72aa41d05b28247e"
+        },
+        {
+          "path": "README.md",
+          "bytes": 4043,
+          "sha256": "90bc9c8da4ec9fad492fd04218f7f3eabaa4173c9e8eec9dc59b519a01751cbb"
+        },
+        {
+          "path": "config.json",
+          "bytes": 777,
+          "sha256": "55701842a867918c89390770106d33cf606112e9ecb9344e78bebe35be0ebc58"
+        },
+        {
+          "path": "config_sentence_transformers.json",
+          "bytes": 295,
+          "sha256": "c4f12023a0d2a559191b363b9b154ccc686d312857ab50eee083d45e21243eff"
+        },
+        {
+          "path": "model-metadata.json",
+          "bytes": 346,
+          "sha256": "20026c02b728800695aab4c01030bcda62cc6e0d87e4d642e7f546f8abc85706"
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 470637416,
+          "sha256": "7f4f89d628f87ade0e0b57c40affb6402cd77abc8110584d8d35dc86da514ee8"
+        },
+        {
+          "path": "modules.json",
+          "bytes": 290,
+          "sha256": "318d49f1092cad125a35af58d9795bcddce84bf7e7240bd8d95b9b6858f9476b"
+        },
+        {
+          "path": "sentence_bert_config.json",
+          "bytes": 250,
+          "sha256": "5fee3fcdc4a727fad422f0fed0c867b0921eefa9051de221521956ed42eb4c19"
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 17082987,
+          "sha256": "cad551d5600a84242d0973327029452a1e3672ba6313c2a3c3d69c4310e12719"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 612,
+          "sha256": "f87d4952eab944ea4c51ca5121310724ea6d71e7114532c848d67bc32a0f388f"
+        },
+        {
+          "path": "validation.ipynb",
+          "bytes": 18214,
+          "sha256": "9489f09fcd8a0d815ee877ca6435ce8814fdfcdb2d2f7d835432479656a396b9"
+        }
+      ]
+    }
+  ]
 }

@@ -9,6 +9,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from model_registry import review_model
+from notebook_factory import create_validation_notebook
+from validate_notebook import execute_notebook
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -25,14 +29,16 @@ def main() -> int:
         return 2
     staging = destination.parent / f".{args.name}.partial-{uuid4().hex}"
     try:
-        from transformers import AutoModel, AutoTokenizer
+        from transformers import AutoModel, AutoModelForSequenceClassification, AutoTokenizer
     except ImportError as exc:
         print(f"ERROR: falta transformers: {exc}", file=sys.stderr)
         return 2
     try:
-        kwargs = {"revision": args.revision} if args.revision else {}
+        reviewed = review_model(args.model, args.revision)
+        kwargs = {"revision": reviewed.revision}
         tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=False, **kwargs)
-        model = AutoModel.from_pretrained(args.model, trust_remote_code=False, use_safetensors=True, **kwargs)
+        model_class = AutoModelForSequenceClassification if reviewed.pipeline_tag == "zero-shot-classification" else AutoModel
+        model = model_class.from_pretrained(args.model, trust_remote_code=False, use_safetensors=True, **kwargs)
         staging.mkdir(parents=True, exist_ok=False)
         tokenizer.save_pretrained(str(staging))
         model.save_pretrained(str(staging), safe_serialization=True)
@@ -40,11 +46,19 @@ def main() -> int:
             "name": args.name,
             "model_type": "transformer",
             "source": args.model,
-            "revision": args.revision,
+            "revision": reviewed.revision,
             "framework": "transformers",
+            "license": reviewed.license,
+            "task": reviewed.pipeline_tag,
             "python_target": "3.11",
             "downloaded_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "validation": {"status": "pending"},
         }
+        (staging / "model-metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        validation_notebook = create_validation_notebook(staging)
+        execute_notebook(validation_notebook)
+        metadata["validation"] = {"status": "passed"}
+        metadata["validation_timestamp_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         (staging / "model-metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         staging.replace(destination)
     except Exception as exc:

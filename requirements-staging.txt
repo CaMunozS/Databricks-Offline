@@ -3,4 +3,7 @@ transformers
 sentence-transformers
 safetensors
 torch
-
+jupyter
+nbformat
+nbclient
+ipykernel

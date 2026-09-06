@@ -1,0 +1,9 @@
+{
+  "name": "paraphrase-multilingual-MiniLM-L12-v2",
+  "model_type": "embedding",
+  "source": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+  "framework": "sentence-transformers",
+  "python_target": "3.11",
+  "downloaded_at_utc": "2026-09-06T20:02:56.645964Z"
+}

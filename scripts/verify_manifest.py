@@ -77,6 +77,8 @@ def main() -> int:
         actual = {path.relative_to(folder).as_posix(): path for path in folder.rglob("*") if path.is_file()} if folder.exists() else {}
         if not folder.is_dir():
             failures.append(f"carpeta de modelo faltante: {folder}")
+        elif not (folder / "validation.ipynb").is_file():
+            failures.append(f"notebook de validación faltante: {folder / 'validation.ipynb'}")
         for relative, item in expected.items():
             path = folder / relative
             if not path.exists():

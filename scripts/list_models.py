@@ -28,6 +28,8 @@ def main() -> int:
             print(f"  source: {data.get('source', '')}")
             print(f"  revision: {data.get('revision') or ''}")
             print(f"  framework: {data.get('framework', '')}")
+            print(f"  license: {data.get('license', '')}")
+            print(f"  validation notebook: {'OK' if (folder / 'validation.ipynb').is_file() else 'MISSING'}")
             count += 1
         print()
     print(f"{count} modelos disponibles")

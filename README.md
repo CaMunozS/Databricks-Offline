@@ -91,6 +91,45 @@ que se copia a:
 
 La carga manual y permisos del Volume siguen el procedimiento corporativo. Los ejemplos bajo `examples/databricks/` consumen solamente rutas `/Volumes/...`, sin fallback a Internet. Consulte `docs/architecture.md`, `docs/add-model.md` y `docs/upload-to-databricks.md`.
 
+## Validación local obligatoria por modelo
+
+Una carpeta de modelo es válida solamente si incluye tanto `model-metadata.json` como `validation.ipynb`. El downloader genera el notebook con `nbformat`, lo ejecuta automáticamente con `nbclient` antes de publicar la carpeta definitiva y conserva las salidas como evidencia técnica. Las rutas locales se redactan antes de guardar el notebook ejecutado.
+
+```text
+descargar modelo
+        ↓
+crear metadata
+        ↓
+crear validation.ipynb
+        ↓
+ejecutar notebook localmente y offline
+        ↓
+validación offline OK
+        ↓
+generar manifest
+        ↓
+verificar SHA-256
+        ↓
+Git / Git LFS
+        ↓
+PC corporativo: git lfs pull y verificar SHA-256
+        ↓
+copiar carpeta individual
+        ↓
+Databricks Volume
+```
+
+El notebook se ejecuta con el directorio de trabajo igual a su propia carpeta, carga `MODEL_PATH = Path.cwd()` y establece `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1` y `HF_DATASETS_OFFLINE=1`. Las cargas usan siempre `local_files_only=True`.
+
+Para volver a ejecutar una evidencia existente:
+
+```powershell
+python scripts/validate_notebook.py `
+  --path models/embeddings/<nombre-modelo>/validation.ipynb
+```
+
+Al transportar un modelo, copie también `validation.ipynb`; el manifest registra su SHA-256 junto con metadata, pesos y archivos de configuración.
+
 ## Seguridad
 
 No incluya credenciales, tokens, secretos, URLs internas, nombres de personas, datos de clientes ni información bancaria. El push nunca se ejecuta automáticamente.

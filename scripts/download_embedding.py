@@ -9,16 +9,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-
-def resolve_revision(model_id: str, requested_revision: str | None) -> str | None:
-    """Resolve a public Hugging Face revision to its immutable commit SHA."""
-    try:
-        from huggingface_hub import HfApi
-
-        return HfApi().model_info(model_id, revision=requested_revision).sha
-    except Exception as exc:
-        print(f"ADVERTENCIA: no se pudo resolver el commit SHA: {exc}", file=sys.stderr)
-        return requested_revision
+from model_registry import review_model
+from notebook_factory import create_validation_notebook
+from validate_notebook import execute_notebook
 
 
 def main() -> int:
@@ -41,8 +34,8 @@ def main() -> int:
         print(f"ERROR: falta sentence-transformers: {exc}", file=sys.stderr)
         return 2
     try:
-        resolved_revision = resolve_revision(args.model, args.revision)
-        load_options = {"revision": resolved_revision} if resolved_revision else {}
+        reviewed = review_model(args.model, args.revision)
+        load_options = {"revision": reviewed.revision}
         model = SentenceTransformer(args.model, trust_remote_code=False, **load_options)
         staging.mkdir(parents=True, exist_ok=False)
         model.save(str(staging), safe_serialization=True)
@@ -50,11 +43,18 @@ def main() -> int:
             "name": args.name,
             "model_type": "embedding",
             "source": args.model,
-            "revision": resolved_revision,
+            "revision": reviewed.revision,
             "framework": "sentence-transformers",
+            "license": reviewed.license,
             "python_target": "3.11",
             "downloaded_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "validation": {"status": "pending"},
         }
+        (staging / "model-metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        validation_notebook = create_validation_notebook(staging)
+        execute_notebook(validation_notebook)
+        metadata["validation"] = {"status": "passed"}
+        metadata["validation_timestamp_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         (staging / "model-metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         staging.replace(destination)
     except Exception as exc:
