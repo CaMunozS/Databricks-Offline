@@ -12,6 +12,7 @@ SCHEMA = "<schema>"
 VOLUME = "<volume>"
 VOLUME_ROOT = Path(f"/Volumes/{CATALOG}/{SCHEMA}/{VOLUME}")
 MODELS_ROOT = VOLUME_ROOT / "models"
+EMBEDDINGS_ROOT = MODELS_ROOT / "embeddings"
 TRANSFORMERS_ROOT = MODELS_ROOT / "transformers"
 model_path = TRANSFORMERS_ROOT / "<modelo>"
 if not model_path.exists():

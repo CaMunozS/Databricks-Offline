@@ -12,6 +12,7 @@ VOLUME = "<volume>"
 VOLUME_ROOT = Path(f"/Volumes/{CATALOG}/{SCHEMA}/{VOLUME}")
 MODELS_ROOT = VOLUME_ROOT / "models"
 EMBEDDINGS_ROOT = MODELS_ROOT / "embeddings"
+TRANSFORMERS_ROOT = MODELS_ROOT / "transformers"
 model_path = EMBEDDINGS_ROOT / "<modelo>"
 if not model_path.exists():
     raise FileNotFoundError(f"No existe el modelo: {model_path}")

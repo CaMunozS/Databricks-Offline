@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 
 def main() -> int:
@@ -21,6 +23,7 @@ def main() -> int:
     if destination.exists():
         print(f"ERROR: el destino ya existe: {destination}", file=sys.stderr)
         return 2
+    staging = destination.parent / f".{args.name}.partial-{uuid4().hex}"
     try:
         from transformers import AutoModel, AutoTokenizer
     except ImportError as exc:
@@ -28,11 +31,11 @@ def main() -> int:
         return 2
     try:
         kwargs = {"revision": args.revision} if args.revision else {}
-        tokenizer = AutoTokenizer.from_pretrained(args.model, **kwargs)
-        model = AutoModel.from_pretrained(args.model, use_safetensors=True, **kwargs)
-        destination.mkdir(parents=True, exist_ok=False)
-        tokenizer.save_pretrained(str(destination))
-        model.save_pretrained(str(destination), safe_serialization=True)
+        tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=False, **kwargs)
+        model = AutoModel.from_pretrained(args.model, trust_remote_code=False, use_safetensors=True, **kwargs)
+        staging.mkdir(parents=True, exist_ok=False)
+        tokenizer.save_pretrained(str(staging))
+        model.save_pretrained(str(staging), safe_serialization=True)
         metadata = {
             "name": args.name,
             "model_type": "transformer",
@@ -40,10 +43,13 @@ def main() -> int:
             "revision": args.revision,
             "framework": "transformers",
             "python_target": "3.11",
-            "downloaded_at_utc": datetime.now(timezone.utc).isoformat(),
+            "downloaded_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         }
-        (destination / "model-metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        (staging / "model-metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        staging.replace(destination)
     except Exception as exc:
+        if staging.exists():
+            shutil.rmtree(staging)
         print(f"ERROR: no se pudo preparar el modelo: {exc}", file=sys.stderr)
         return 1
     print(f"Modelo guardado en: {destination}")

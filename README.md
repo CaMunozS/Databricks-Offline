@@ -32,6 +32,8 @@ No se modifica automáticamente la instalación global de Python.
 
 ## Git LFS y estructura
 
+En el PC corporativo, después de clonar el repositorio, ejecute `git lfs pull` y luego `python scripts/verify_manifest.py`. Confirme que los pesos son archivos reales y no punteros LFS: un puntero es un archivo de texto pequeño, no un modelo utilizable.
+
 Ejecute `git lfs install` si Git LFS está disponible. `.gitattributes` marca pesos grandes (`*.safetensors`, `*.bin`, `*.pt`, `*.pth`, `*.onnx`, `*.gguf`, `*.h5`). Si no está instalado, la estructura inicial sigue funcionando, pero los pesos grandes no tendrán manejo LFS.
 
 ```text
@@ -73,6 +75,8 @@ El manifest está organizado por modelo y registra tamaño y SHA-256 por archivo
 
 ## Transferencia a Databricks
 
+Flujo completo: preparar con Python 3.11, validar offline, generar/verificar manifest, ejecutar `git add` y `git commit`, hacer push manual, clonar o descargar en el PC corporativo, ejecutar `git lfs pull`, validar SHA-256 y transferir una carpeta de modelo completa.
+
 La unidad de transferencia es una carpeta completa, por ejemplo:
 
 ```text
@@ -90,4 +94,3 @@ La carga manual y permisos del Volume siguen el procedimiento corporativo. Los e
 ## Seguridad
 
 No incluya credenciales, tokens, secretos, URLs internas, nombres de personas, datos de clientes ni información bancaria. El push nunca se ejecuta automáticamente.
-

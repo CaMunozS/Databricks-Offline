@@ -2,24 +2,35 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1] / "models"
-    rows: list[tuple[str, str, str, str, str]] = []
-    for model_type in ("embeddings", "transformers"):
+    count = 0
+    for model_type, label in (("embeddings", "EMBEDDINGS"), ("transformers", "TRANSFORMERS")):
+        print(label)
         base = root / model_type
         for folder in sorted(base.iterdir()) if base.exists() else []:
             metadata_path = folder / "model-metadata.json"
-            if not folder.is_dir() or not metadata_path.exists():
+            if not folder.is_dir() or folder.name.startswith("."):
                 continue
-            data = json.loads(metadata_path.read_text(encoding="utf-8"))
-            rows.append((model_type[:-1], data.get("name", folder.name), data.get("source", ""), str(data.get("revision") or ""), data.get("framework", "")))
-    print("type\tname\tsource\trevision\tframework")
-    for row in rows:
-        print("\t".join(row))
-    print(f"Modelos encontrados: {len(rows)}")
+            if not metadata_path.exists():
+                print(f"- {folder.name} (ERROR: falta model-metadata.json)", file=sys.stderr)
+                continue
+            try:
+                data = json.loads(metadata_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as exc:
+                print(f"- {folder.name} (ERROR: metadata JSON inválida: {exc})", file=sys.stderr)
+                continue
+            print(f"- nombre: {data.get('name', folder.name)}")
+            print(f"  source: {data.get('source', '')}")
+            print(f"  revision: {data.get('revision') or ''}")
+            print(f"  framework: {data.get('framework', '')}")
+            count += 1
+        print()
+    print(f"{count} modelos disponibles")
     return 0
 
 
