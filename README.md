@@ -151,4 +151,16 @@ Debe reejecutarse la validación con Python 3.12.3, regenerar `validation.ipynb`
 
 ## Seguridad
 
+## Databricks Runtime y clonación segura
+
+Para modelos `sentence-transformers` y `transformers` use Databricks Runtime 17.3 ML (`17.3.x-cpu-ml-scala2.13`). El Runtime estándar no incluye las dependencias de NLP y no puede instalarlas desde PyPI. Las librerías son dependencias del runtime, no artefactos que deban viajar en el repositorio.
+
+Después de clonar en Windows, ejecute `git lfs pull` y `python scripts/verify_manifest.py`. Los artefactos bajo `models/` y los archivos JSON se marcan como binarios para impedir conversiones LF/CRLF. Si el verificador informa una conversión CRLF, recupere el archivo indicado con:
+
+```powershell
+git -c core.autocrlf=false checkout -- <ruta-del-archivo>
+```
+
+En Databricks indique explícitamente `MODEL_PATH=/Volumes/<catalog>/<schema>/<volume>/models/<tipo>/<modelo>` o complete el widget `model_path`. En Runtime 17.3 estándar, seleccione ML Runtime; no intente `pip install` en el cluster. Para `SINGLE_USER`, el principal del cluster requiere `USE CATALOG`, `USE SCHEMA` y `READ VOLUME`.
+
 No incluya credenciales, tokens, secretos, URLs internas, nombres de personas, datos de clientes ni información bancaria. El push nunca se ejecuta automáticamente.

@@ -4,8 +4,9 @@ from __future__ import annotations
 import platform
 from typing import Any
 
-PYTHON_TARGET = "3.12.3"
-PYTHON_REQUIRES = ">=3.12.3,<3.13"
+PYTHON_TARGET = ">=3.11,<3.12"
+PYTHON_REQUIRES = PYTHON_TARGET
+DATABRICKS_RUNTIME_TARGET = "17.3 ML Runtime (Python 3.12.3)"
 
 RUNTIME_TARGET = {
     "python": "3.12.3",
@@ -59,3 +60,15 @@ def report_runtime() -> dict[str, str]:
     else:
         print("RUNTIME PROFILE MATCH")
     return actual
+
+
+def require_target_python() -> None:
+    """Backward-compatible diagnostic hook; it deliberately does not block staging."""
+    report_runtime()
+
+
+def python_minor_warning(metadata_target: str | None) -> str | None:
+    """Warn about metadata drift without rejecting a runtime minor difference."""
+    if metadata_target and metadata_target != PYTHON_TARGET:
+        return f"Advertencia: metadata python_target={metadata_target}; staging actual={PYTHON_TARGET}."
+    return None

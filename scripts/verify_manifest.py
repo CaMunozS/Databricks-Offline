@@ -7,6 +7,8 @@ import json
 import sys
 from pathlib import Path
 
+from integrity import is_lfs_pointer, looks_like_crlf_conversion
+
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_FOLDERS = ("embeddings", "transformers")
 
@@ -83,8 +85,16 @@ def main() -> int:
             path = folder / relative
             if not path.exists():
                 failures.append(f"faltante: {path}")
+            elif is_lfs_pointer(path):
+                failures.append(f"puntero Git LFS: {path}. Ejecute git lfs pull.")
             elif path.stat().st_size != item.get("bytes"):
-                failures.append(f"tamaño incorrecto: {path}")
+                if looks_like_crlf_conversion(path, item.get("bytes", 0)):
+                    failures.append(
+                        f"tamaño incorrecto compatible con conversión CRLF: {path}. "
+                        f"Recupere con: git -c core.autocrlf=false checkout -- {path}"
+                    )
+                else:
+                    failures.append(f"tamaño incorrecto: {path}")
             elif digest(path) != item.get("sha256"):
                 failures.append(f"SHA-256 incorrecto: {path}")
         for relative in sorted(set(actual) - set(expected)):

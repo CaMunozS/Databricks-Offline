@@ -4,6 +4,11 @@
   "source": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
   "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
   "framework": "sentence-transformers",
-  "python_target": "3.11",
-  "downloaded_at_utc": "2026-09-06T20:02:56.645964Z"
+  "license": "apache-2.0",
+  "python_target": ">=3.11,<3.13",
+  "databricks_runtime_supported": "17.3 ML Runtime (Python 3.12.3)",
+  "downloaded_at_utc": "2026-09-06T20:02:56.645964Z",
+  "validation": {
+    "status": "passed_with_version_warning"
+  }
 }

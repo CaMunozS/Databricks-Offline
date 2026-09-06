@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from runtime_config import PYTHON_TARGET
+from runtime_config import DATABRICKS_RUNTIME_TARGET, PYTHON_TARGET
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_TYPES = (("embeddings", "embedding", "sentence-transformers"), ("transformers", "transformer", "transformers"))
@@ -68,7 +68,7 @@ def main() -> int:
     except ValueError as exc:
         print(f"ERROR: {exc}")
         return 1
-    payload = {"generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "python_target": PYTHON_TARGET, "models": models}
+    payload = {"generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "python_target": PYTHON_TARGET, "databricks_runtime_target": DATABRICKS_RUNTIME_TARGET, "models": models}
     target = ROOT / "model-manifest.json"
     target.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Manifest generado: {target} ({len(models)} modelos)")

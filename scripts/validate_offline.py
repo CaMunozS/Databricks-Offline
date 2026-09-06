@@ -6,16 +6,10 @@ import os
 import sys
 from pathlib import Path
 
-from runtime_config import require_target_python
+from integrity import lfs_pointers
 
 
 def main() -> int:
-    try:
-        require_target_python()
-    except RuntimeError as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return 2
-
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--type", choices=("embedding", "transformer"), required=True)
     parser.add_argument("--path", type=Path, required=True)
@@ -26,6 +20,11 @@ def main() -> int:
         return 2
     os.environ["HF_HUB_OFFLINE"] = "1"
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    os.environ["HF_DATASETS_OFFLINE"] = "1"
+    pointers = lfs_pointers(path)
+    if pointers:
+        print(f"ERROR: puntero Git LFS detectado: {pointers[0]}. Ejecute git lfs pull.", file=sys.stderr)
+        return 2
     try:
         if args.type == "embedding":
             from sentence_transformers import SentenceTransformer

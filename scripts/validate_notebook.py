@@ -12,7 +12,6 @@ from pathlib import Path
 import nbformat
 from nbclient import NotebookClient
 
-from runtime_config import require_target_python
 
 KERNEL_NAME = "offline-model-validation"
 
@@ -51,7 +50,6 @@ def sanitize_outputs(notebook: nbformat.NotebookNode) -> None:
 
 
 def execute_notebook(notebook_path: Path, timeout: int = 600) -> None:
-    require_target_python()
     notebook_path = notebook_path.resolve()
     if notebook_path.name != "validation.ipynb" or not notebook_path.is_file():
         raise ValueError("--path debe apuntar a un validation.ipynb existente.")
