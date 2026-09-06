@@ -11,10 +11,17 @@ from uuid import uuid4
 
 from model_registry import review_model
 from notebook_factory import create_validation_notebook
+from runtime_config import PYTHON_TARGET, require_target_python
 from validate_notebook import execute_notebook
 
 
 def main() -> int:
+    try:
+        require_target_python()
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True, help="Hugging Face model identifier")
     parser.add_argument("--name", required=True, help="Local folder name")
@@ -46,7 +53,7 @@ def main() -> int:
             "revision": reviewed.revision,
             "framework": "sentence-transformers",
             "license": reviewed.license,
-            "python_target": "3.11",
+            "python_target": PYTHON_TARGET,
             "downloaded_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "validation": {"status": "pending"},
         }
