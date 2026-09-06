@@ -6,6 +6,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from runtime_config import PYTHON_TARGET
+
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_TYPES = (("embeddings", "embedding", "sentence-transformers"), ("transformers", "transformer", "transformers"))
 
@@ -31,6 +33,11 @@ def read_metadata(path: Path, folder_name: str, expected_type: str, expected_fra
         raise ValueError(f"metadata inconsistente en {path}")
     if metadata["name"] != folder_name:
         raise ValueError(f"el nombre en metadata no coincide con la carpeta: {path}")
+    if metadata["python_target"] != PYTHON_TARGET:
+        raise ValueError(
+            f"modelo requiere revalidación para Python {PYTHON_TARGET}: {path} "
+            f"(metadata actual: {metadata['python_target']})"
+        )
     if metadata["validation"].get("status") != "passed":
         raise ValueError(f"modelo sin validación aprobada: {path}")
     return metadata
@@ -61,7 +68,7 @@ def main() -> int:
     except ValueError as exc:
         print(f"ERROR: {exc}")
         return 1
-    payload = {"generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "python_target": "3.11", "models": models}
+    payload = {"generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "python_target": PYTHON_TARGET, "models": models}
     target = ROOT / "model-manifest.json"
     target.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Manifest generado: {target} ({len(models)} modelos)")
