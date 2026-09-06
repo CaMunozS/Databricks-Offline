@@ -6,8 +6,16 @@ import os
 import sys
 from pathlib import Path
 
+from runtime_config import require_target_python
+
 
 def main() -> int:
+    try:
+        require_target_python()
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--type", choices=("embedding", "transformer"), required=True)
     parser.add_argument("--path", type=Path, required=True)
@@ -21,14 +29,14 @@ def main() -> int:
     try:
         if args.type == "embedding":
             from sentence_transformers import SentenceTransformer
-            model = SentenceTransformer(str(path), local_files_only=True)
+            model = SentenceTransformer(str(path), local_files_only=True, trust_remote_code=False)
             result = model.encode(["Texto de validación offline."], normalize_embeddings=True, show_progress_bar=False)
             print(f"Embedding validado: shape={result.shape}")
         else:
             import torch
             from transformers import AutoModel, AutoTokenizer
-            tokenizer = AutoTokenizer.from_pretrained(str(path), local_files_only=True)
-            model = AutoModel.from_pretrained(str(path), local_files_only=True)
+            tokenizer = AutoTokenizer.from_pretrained(str(path), local_files_only=True, trust_remote_code=False)
+            model = AutoModel.from_pretrained(str(path), local_files_only=True, trust_remote_code=False)
             tokens = tokenizer("Texto de validación offline.", return_tensors="pt")
             with torch.no_grad():
                 outputs = model(**tokens)
