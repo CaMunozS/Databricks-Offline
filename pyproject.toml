@@ -6,5 +6,4 @@ build-backend = "setuptools.build_meta"
 name = "offline-model-transport"
 version = "0.1.0"
 description = "Staging and offline validation utilities for transportable ML models"
-requires-python = ">=3.11,<3.12"
-
+requires-python = ">=3.12.3,<3.13"
