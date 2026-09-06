@@ -10,6 +10,17 @@ from pathlib import Path
 from uuid import uuid4
 
 
+def resolve_revision(model_id: str, requested_revision: str | None) -> str | None:
+    """Resolve a public Hugging Face revision to its immutable commit SHA."""
+    try:
+        from huggingface_hub import HfApi
+
+        return HfApi().model_info(model_id, revision=requested_revision).sha
+    except Exception as exc:
+        print(f"ADVERTENCIA: no se pudo resolver el commit SHA: {exc}", file=sys.stderr)
+        return requested_revision
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True, help="Hugging Face model identifier")
@@ -30,7 +41,8 @@ def main() -> int:
         print(f"ERROR: falta sentence-transformers: {exc}", file=sys.stderr)
         return 2
     try:
-        load_options = {"revision": args.revision} if args.revision else {}
+        resolved_revision = resolve_revision(args.model, args.revision)
+        load_options = {"revision": resolved_revision} if resolved_revision else {}
         model = SentenceTransformer(args.model, trust_remote_code=False, **load_options)
         staging.mkdir(parents=True, exist_ok=False)
         model.save(str(staging), safe_serialization=True)
@@ -38,7 +50,7 @@ def main() -> int:
             "name": args.name,
             "model_type": "embedding",
             "source": args.model,
-            "revision": args.revision,
+            "revision": resolved_revision,
             "framework": "sentence-transformers",
             "python_target": "3.11",
             "downloaded_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
