@@ -8,6 +8,8 @@ from pathlib import Path
 import nbformat
 from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 
+from runtime_config import PYTHON_TARGET
+
 KERNEL_NAME = "offline-model-validation"
 REQUIRED_METADATA = ("name", "model_type", "source", "revision", "framework", "python_target", "downloaded_at_utc")
 
@@ -27,6 +29,11 @@ def read_metadata(model_dir: Path) -> dict[str, object]:
         raise ValueError("El nombre de metadata no coincide con la carpeta del modelo.")
     if metadata["model_type"] not in {"embedding", "transformer"}:
         raise ValueError("model_type debe ser embedding o transformer.")
+    if metadata["python_target"] != PYTHON_TARGET:
+        raise ValueError(
+            f"El modelo debe validarse con Python {PYTHON_TARGET}; "
+            f"metadata actual: {metadata['python_target']}"
+        )
     return metadata
 
 
@@ -44,7 +51,8 @@ def base_cells(expected_type: str) -> list[object]:
         ),
         new_code_cell(
             "from pathlib import Path\n"
-            "import json\n\n"
+            "import json\n"
+            "import sys\n\n"
             "MODEL_PATH = Path.cwd().resolve()\n"
             "metadata_path = MODEL_PATH / 'model-metadata.json'\n"
             "metadata = json.loads(metadata_path.read_text(encoding='utf-8'))\n"
@@ -53,7 +61,10 @@ def base_cells(expected_type: str) -> list[object]:
             "assert not missing_fields, f'Metadata incompleta: {sorted(missing_fields)}'\n"
             "assert metadata['name'] == MODEL_PATH.name, 'El nombre no coincide con la carpeta'\n"
             f"assert metadata['model_type'] == '{expected_type}', 'Tipo de modelo incorrecto'\n"
+            f"assert metadata['python_target'] == '{PYTHON_TARGET}', 'Python target incorrecto'\n"
+            f"assert sys.version_info[:3] == (3, 12, 3), f'Se requiere Python {PYTHON_TARGET}; detectado: {{sys.version.split()[0]}}'\n"
             "print(f'Model path: {MODEL_PATH.resolve()}')\n"
+            "print(f'python_runtime: {sys.version.split()[0]}')\n"
             "for field in ('name', 'model_type', 'source', 'revision', 'framework', 'python_target'):\n"
             "    print(f'{field}: {metadata[field]}')"
         ),
@@ -141,7 +152,7 @@ def create_validation_notebook(model_dir: Path) -> Path:
         cells=cells,
         metadata={
             "kernelspec": {"display_name": "Offline model validation", "language": "python", "name": KERNEL_NAME},
-            "language_info": {"name": "python", "version": "3.11"},
+            "language_info": {"name": "python", "version": PYTHON_TARGET},
         },
     )
     output_path = model_dir / "validation.ipynb"
