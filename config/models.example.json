@@ -1,0 +1,16 @@
+{
+  "models": [
+    {
+      "name": "paraphrase-multilingual-MiniLM-L12-v2",
+      "model_type": "embedding",
+      "source": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "revision": null,
+      "framework": "sentence-transformers",
+      "description": "",
+      "license": "",
+      "approved": false,
+      "approved_by": "",
+      "notes": ""
+    }
+  ]
+}
