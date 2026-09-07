@@ -10,7 +10,7 @@ from pathlib import Path
 from integrity import is_lfs_pointer, looks_like_crlf_conversion
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL_FOLDERS = ("embeddings", "transformers")
+MODEL_FOLDERS = ("embeddings", "transformers", "spacy")
 
 
 def digest(path: Path) -> str:

@@ -27,12 +27,14 @@ def read_metadata(model_dir: Path) -> dict[str, object]:
     # ejecutar la validación; la coincidencia definitiva la exige el manifest.
     if not model_dir.name.startswith(".") and metadata["name"] != model_dir.name:
         raise ValueError("El nombre de metadata no coincide con la carpeta del modelo.")
-    if metadata["model_type"] not in {"embedding", "transformer"}:
-        raise ValueError("model_type debe ser embedding o transformer.")
+    if metadata["model_type"] not in {"embedding", "transformer", "spacy"}:
+        raise ValueError("model_type debe ser embedding, transformer o spacy.")
     return metadata
 
 
 def base_cells(expected_type: str, model_name: str) -> list[object]:
+    folder_type = {"embedding": "embeddings", "transformer": "transformers", "spacy": "spacy"}[expected_type]
+    packages = ("spacy",) if expected_type == "spacy" else ("torch", "transformers", "sentence-transformers")
     return [
         new_markdown_cell(
             "# Validación offline del modelo\n\n"
@@ -67,7 +69,7 @@ def base_cells(expected_type: str, model_name: str) -> list[object]:
             "    working_directory = Path.cwd().resolve()\n"
             "    if (working_directory / 'model-metadata.json').is_file():\n"
             "        return working_directory\n"
-            f"    relative_model = Path('models') / '{expected_type}s' / '{model_name}'\n"
+            f"    relative_model = Path('models') / '{folder_type}' / '{model_name}'\n"
             "    for root in (working_directory, *working_directory.parents):\n"
             "        candidate = root / relative_model\n"
             "        if (candidate / 'model-metadata.json').is_file():\n"
@@ -82,7 +84,7 @@ def base_cells(expected_type: str, model_name: str) -> list[object]:
             "print(f'DATABRICKS_RUNTIME_VERSION: {runtime}')\n"
             "# DATABRICKS_RUNTIME_VERSION no distingue Runtime estándar de ML.\n"
             "# Se valida la capacidad requerida comprobando los paquetes instalados.\n"
-            "for package in ('torch', 'transformers', 'sentence-transformers'):\n"
+            f"for package in {packages!r}:\n"
             "    try:\n"
             "        print(f'{package}: {importlib.metadata.version(package)}')\n"
             "    except importlib.metadata.PackageNotFoundError as exc:\n"
@@ -192,12 +194,35 @@ def transformer_cells() -> list[object]:
     ]
 
 
+def spacy_cells() -> list[object]:
+    return [
+        new_code_cell(
+            "import spacy\n\n"
+            "nlp = spacy.load(str(MODEL_PATH))\n"
+            "assert nlp.lang == 'es'\n"
+            "print(f'pipeline: {nlp.pipe_names}')"
+        ),
+        new_code_cell(
+            "doc = nlp('María llamó desde Santiago para consultar el saldo de su tarjeta.')\n"
+            "assert len(doc) > 0\n"
+            "assert all(token.text for token in doc)\n"
+            "print(f'tokens: {len(doc)}')\n"
+            "print(f'entidades: {[(ent.text, ent.label_) for ent in doc.ents]}')\n"
+            "print('resultado: OK')"
+        ),
+    ]
+
+
 def create_validation_notebook(model_dir: Path) -> Path:
     model_dir = model_dir.resolve()
     metadata = read_metadata(model_dir)
     model_type = str(metadata["model_type"])
     cells = base_cells(model_type, model_dir.name)
-    cells.extend(embedding_cells() if model_type == "embedding" else transformer_cells())
+    cells.extend(
+        embedding_cells() if model_type == "embedding"
+        else transformer_cells() if model_type == "transformer"
+        else spacy_cells()
+    )
     cells.append(new_code_cell("print('VALIDATION OK')\nprint('Modelo cargado y ejecutado usando únicamente archivos locales.')"))
     notebook = new_notebook(
         cells=cells,

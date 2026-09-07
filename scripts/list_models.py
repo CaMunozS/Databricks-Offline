@@ -9,7 +9,7 @@ from pathlib import Path
 def main() -> int:
     root = Path(__file__).resolve().parents[1] / "models"
     count = 0
-    for model_type, label in (("embeddings", "EMBEDDINGS"), ("transformers", "TRANSFORMERS")):
+    for model_type, label in (("embeddings", "EMBEDDINGS"), ("transformers", "TRANSFORMERS"), ("spacy", "SPACY")):
         print(label)
         base = root / model_type
         for folder in sorted(base.iterdir()) if base.exists() else []:

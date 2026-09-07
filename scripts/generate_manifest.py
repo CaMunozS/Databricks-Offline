@@ -9,7 +9,11 @@ from pathlib import Path
 from runtime_config import DATABRICKS_RUNTIME_TARGET, PYTHON_TARGET, RUNTIME_TARGET
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL_TYPES = (("embeddings", "embedding", "sentence-transformers"), ("transformers", "transformer", "transformers"))
+MODEL_TYPES = (
+    ("embeddings", "embedding", "sentence-transformers"),
+    ("transformers", "transformer", "transformers"),
+    ("spacy", "spacy", "spacy"),
+)
 
 
 def sha256(path: Path) -> str:
