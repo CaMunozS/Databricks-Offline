@@ -65,7 +65,11 @@ def main() -> int:
         return 1
     payload = {"generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "python_target": PYTHON_TARGET, "databricks_runtime_target": DATABRICKS_RUNTIME_TARGET, "models": models}
     target = ROOT / "model-manifest.json"
-    target.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    target.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     print(f"Manifest generado: {target} ({len(models)} modelos)")
     return 0
 

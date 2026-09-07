@@ -72,7 +72,8 @@ def execute_notebook(notebook_path: Path, timeout: int = 600) -> None:
             else:
                 os.environ["JUPYTER_PATH"] = previous_jupyter_path
     sanitize_outputs(notebook)
-    nbformat.write(notebook, notebook_path)
+    with notebook_path.open("w", encoding="utf-8", newline="\n") as handle:
+        nbformat.write(notebook, handle)
 
 
 def main() -> int:

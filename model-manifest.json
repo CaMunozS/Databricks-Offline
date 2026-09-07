@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-06T23:18:02.965693Z",
+  "generated_at_utc": "2026-09-07T00:58:23.511142Z",
   "python_target": ">=3.11,<3.12",
   "databricks_runtime_target": "17.3 ML Runtime (Python 3.12.3)",
   "models": [
@@ -60,8 +60,8 @@
         },
         {
           "path": "validation.ipynb",
-          "bytes": 21138,
-          "sha256": "8925b4fa246121553dcd696569853f09f78d9c9316543149d910490533f41330"
+          "bytes": 20412,
+          "sha256": "d232c1b3a084219259d6f6dba9e4b0fc3bbc775be7e79ac9cf30f76c21121fd7"
         }
       ]
     }
