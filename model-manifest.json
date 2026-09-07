@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-07T13:59:19.977925Z",
+  "generated_at_utc": "2026-09-07T14:44:01.104236Z",
   "python_target": ">=3.11,<3.13",
   "databricks_runtime_target": "17.3 ML Runtime (Python 3.12.3)",
   "models": [
@@ -149,6 +149,48 @@
           "path": "validation.ipynb",
           "bytes": 10126,
           "sha256": "ce309971b8e6a5b66501e561c74e5f533db01891371c2a5c2d54b76599744dc3"
+        }
+      ]
+    },
+    {
+      "name": "multilingual-MiniLMv2-L6-mnli-xnli",
+      "type": "transformer",
+      "relative_path": "models/transformers/multilingual-MiniLMv2-L6-mnli-xnli",
+      "files": [
+        {
+          "path": "config.json",
+          "bytes": 916,
+          "sha256": "b8d79139755c2b8cefd46337a428645fabfd6c5653155535bab7e0f4108b4246"
+        },
+        {
+          "path": "model-metadata.json",
+          "bytes": 750,
+          "sha256": "805c43c1ea3fc640fe929a2ffff867f9784c71a8ae00799e0aac76326bd40dd7"
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 427992812,
+          "sha256": "4afbf2ca3a8f471d5b4110be557a017a8da43e9f492232769a19992fa00678f4"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "bytes": 1015,
+          "sha256": "66715ae6a0dd4aff4fe228bcaaccac6e52c83fd0ba80992c2be7d0e43b362307"
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 17082832,
+          "sha256": "d0091a328b3441d754e481db5a390d7f3b8dabc6016869fd13ba350d23ddc4cd"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 1345,
+          "sha256": "23e3e25eab55b7fa7f365715f1871d1aa2da7241036e929225fdcfe324d743a1"
+        },
+        {
+          "path": "validation.ipynb",
+          "bytes": 10618,
+          "sha256": "ac5401960aa21082f0ceed13a8465401572016926daaa4accd97e241e13230c2"
         }
       ]
     }

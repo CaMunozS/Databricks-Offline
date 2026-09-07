@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from model_registry import review_model
 from notebook_factory import create_validation_notebook
-from runtime_config import PYTHON_TARGET, require_target_python
+from runtime_config import PYTHON_TARGET, current_runtime, require_target_python
 from validate_notebook import execute_notebook
 
 
@@ -58,6 +58,8 @@ def main() -> int:
             "license": reviewed.license,
             "task": reviewed.pipeline_tag,
             "python_target": PYTHON_TARGET,
+            "databricks_runtime_supported": "17.3 ML Runtime (Python 3.12.3)",
+            "export_environment": current_runtime(),
             "downloaded_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "validation": {"status": "pending"},
         }
