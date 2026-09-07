@@ -4,7 +4,8 @@ from __future__ import annotations
 import platform
 from typing import Any
 
-PYTHON_TARGET = ">=3.11,<3.12"
+# Fuente de verdad para metadata, manifest y entorno de staging.
+PYTHON_TARGET = ">=3.11,<3.13"
 PYTHON_REQUIRES = PYTHON_TARGET
 DATABRICKS_RUNTIME_TARGET = "17.3 ML Runtime (Python 3.12.3)"
 
@@ -63,12 +64,35 @@ def report_runtime() -> dict[str, str]:
 
 
 def require_target_python() -> None:
-    """Backward-compatible diagnostic hook; it deliberately does not block staging."""
+    """Reject a staging dependency mismatch; allow Python 3.12 maintenance releases."""
+    actual = current_runtime()
+    differences = runtime_differences(actual)
+    python_version = actual.get("python", "")
+    if python_version.split(".")[:2] == RUNTIME_TARGET["python"].split(".")[:2]:
+        differences.pop("python", None)
+    if differences:
+        detail = ", ".join(
+            f"{key}: esperado={value['target']} detectado={value['detected']}"
+            for key, value in differences.items()
+        )
+        raise RuntimeError(f"El entorno de staging no coincide con el runtime objetivo: {detail}")
     report_runtime()
 
 
 def python_minor_warning(metadata_target: str | None) -> str | None:
-    """Warn about metadata drift without rejecting a runtime minor difference."""
-    if metadata_target and metadata_target != PYTHON_TARGET:
-        return f"Advertencia: metadata python_target={metadata_target}; staging actual={PYTHON_TARGET}."
+    """Return an explicit warning when this Python is outside metadata's range."""
+    if not metadata_target:
+        return "Advertencia: falta python_target en la metadata."
+    try:
+        from packaging.specifiers import SpecifierSet
+        from packaging.version import Version
+
+        current = Version(platform.python_version())
+        if current not in SpecifierSet(metadata_target):
+            return (
+                f"ADVERTENCIA: Python {current} queda fuera de python_target "
+                f"{metadata_target}; la evidencia no prueba compatibilidad con este intérprete."
+            )
+    except Exception as exc:
+        return f"ADVERTENCIA: no se pudo validar python_target={metadata_target}: {exc}"
     return None

@@ -23,14 +23,16 @@ def read_metadata(model_dir: Path) -> dict[str, object]:
     missing = [field for field in REQUIRED_METADATA if field not in metadata]
     if missing:
         raise ValueError(f"Metadata incompleta: faltan {', '.join(missing)}")
-    if metadata["name"] != model_dir.name:
+    # La descarga se prepara en una carpeta .partial y se renombra sólo tras
+    # ejecutar la validación; la coincidencia definitiva la exige el manifest.
+    if not model_dir.name.startswith(".") and metadata["name"] != model_dir.name:
         raise ValueError("El nombre de metadata no coincide con la carpeta del modelo.")
     if metadata["model_type"] not in {"embedding", "transformer"}:
         raise ValueError("model_type debe ser embedding o transformer.")
     return metadata
 
 
-def base_cells(expected_type: str) -> list[object]:
+def base_cells(expected_type: str, model_name: str) -> list[object]:
     return [
         new_markdown_cell(
             "# Validación offline del modelo\n\n"
@@ -47,6 +49,7 @@ def base_cells(expected_type: str) -> list[object]:
             "import json\n"
             "import os\n"
             "import sys\n"
+            "import platform\n"
             "import importlib.metadata\n\n"
             "def resolve_model_path():\n"
             "    configured = os.environ.get('MODEL_PATH', '').strip()\n"
@@ -61,14 +64,24 @@ def base_cells(expected_type: str) -> list[object]:
             "        if configured:\n"
             "            return Path(configured).resolve()\n"
             "        raise RuntimeError('En Databricks indique MODEL_PATH o el widget model_path con una ruta /Volumes/...')\n"
-            "    return Path.cwd().resolve()\n\n"
+            "    working_directory = Path.cwd().resolve()\n"
+            "    if (working_directory / 'model-metadata.json').is_file():\n"
+            "        return working_directory\n"
+            f"    relative_model = Path('models') / '{expected_type}s' / '{model_name}'\n"
+            "    for root in (working_directory, *working_directory.parents):\n"
+            "        candidate = root / relative_model\n"
+            "        if (candidate / 'model-metadata.json').is_file():\n"
+            "            return candidate.resolve()\n"
+            "    raise RuntimeError(\n"
+            "        'No se encontró la carpeta del modelo. Ejecute desde el repositorio o defina MODEL_PATH.'\n"
+            "    )\n\n"
             "MODEL_PATH = resolve_model_path()\n"
             "runtime = os.environ.get('DATABRICKS_RUNTIME_VERSION', 'local')\n"
             "print('PREFLIGHT')\n"
             "print(f'Python: {sys.version.split()[0]}')\n"
             "print(f'DATABRICKS_RUNTIME_VERSION: {runtime}')\n"
-            "if runtime != 'local' and '17.3' in runtime and '-cpu-ml-' not in runtime:\n"
-            "    raise RuntimeError('Runtime estándar detectado: use ML Runtime; no intente pip install sin salida a PyPI.')\n"
+            "# DATABRICKS_RUNTIME_VERSION no distingue Runtime estándar de ML.\n"
+            "# Se valida la capacidad requerida comprobando los paquetes instalados.\n"
             "for package in ('torch', 'transformers', 'sentence-transformers'):\n"
             "    try:\n"
             "        print(f'{package}: {importlib.metadata.version(package)}')\n"
@@ -81,22 +94,30 @@ def base_cells(expected_type: str) -> list[object]:
             "    raise RuntimeError('Sin acceso al Volume. En SINGLE_USER se requieren USE CATALOG, USE SCHEMA y READ VOLUME para el principal del cluster.') from exc\n"
             "LFS_PREFIX = b'version https://git-lfs.github.com/spec/v1'\n"
             "for artifact in MODEL_PATH.rglob('*'):\n"
-            "    if artifact.is_file() and artifact.open('rb').read(len(LFS_PREFIX)).startswith(LFS_PREFIX):\n"
-            "        raise RuntimeError(f'Puntero Git LFS detectado: {artifact.name}. Ejecute git lfs pull.')\n"
+            "    if artifact.is_file():\n"
+            "        with artifact.open('rb') as handle:\n"
+            "            if handle.read(len(LFS_PREFIX)).startswith(LFS_PREFIX):\n"
+            "                raise RuntimeError(f'Puntero Git LFS detectado: {artifact.name}. Ejecute git lfs pull.')\n"
             "print('PREFLIGHT OK')\n"
             "metadata_path = MODEL_PATH / 'model-metadata.json'\n"
             "metadata = json.loads(metadata_path.read_text(encoding='utf-8'))\n"
             "required_fields = {'name', 'model_type', 'source', 'revision', 'framework', 'python_target'}\n"
             "missing_fields = required_fields - metadata.keys()\n"
             "assert not missing_fields, f'Metadata incompleta: {sorted(missing_fields)}'\n"
-            "assert metadata['name'] == MODEL_PATH.name, 'El nombre no coincide con la carpeta'\n"
+            "assert MODEL_PATH.name.startswith('.') or metadata['name'] == MODEL_PATH.name, 'El nombre no coincide con la carpeta'\n"
             f"assert metadata['model_type'] == '{expected_type}', 'Tipo de modelo incorrecto'\n"
-            "if sys.version_info[:2] != (3, 11):\n"
-            "    print('ADVERTENCIA: minor de Python distinto al staging; continúe solo si la inferencia real pasa.')\n"
+            "from packaging.specifiers import SpecifierSet\n"
+            "from packaging.version import Version\n"
+            "python_target = metadata['python_target']\n"
+            "if Version(platform.python_version()) not in SpecifierSet(python_target):\n"
+            "    print(f'ADVERTENCIA: Python {platform.python_version()} queda fuera de python_target {python_target}; la evidencia no prueba compatibilidad.')\n"
             "print(f'Model path: {MODEL_PATH.resolve()}')\n"
-            "print(f'Model path: {MODEL_PATH.resolve()}')\n"
-            "for field in ('name', 'model_type', 'source', 'revision', 'framework', 'python_target'):\n"
-            "    print(f'{field}: {metadata[field]}')"
+            "for field in ('name', 'model_type', 'source', 'revision', 'framework', 'python_target', 'export_environment'):\n"
+            "    print(f'{field}: {metadata[field]}')\n"
+            "print('Versiones que producen esta evidencia:')\n"
+            "for package in ('sentence-transformers', 'transformers', 'torch'):\n"
+            "    print(f'{package}: {importlib.metadata.version(package)}')\n"
+            "print(f'Python: {platform.python_version()}')"
         ),
     ]
 
@@ -175,14 +196,14 @@ def create_validation_notebook(model_dir: Path) -> Path:
     model_dir = model_dir.resolve()
     metadata = read_metadata(model_dir)
     model_type = str(metadata["model_type"])
-    cells = base_cells(model_type)
+    cells = base_cells(model_type, model_dir.name)
     cells.extend(embedding_cells() if model_type == "embedding" else transformer_cells())
     cells.append(new_code_cell("print('VALIDATION OK')\nprint('Modelo cargado y ejecutado usando únicamente archivos locales.')"))
     notebook = new_notebook(
         cells=cells,
         metadata={
             "kernelspec": {"display_name": "Offline model validation", "language": "python", "name": KERNEL_NAME},
-            "language_info": {"name": "python", "version": "3.11"},
+            "language_info": {"name": "python", "version": "3.12"},
         },
     )
     output_path = model_dir / "validation.ipynb"

@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from runtime_config import DATABRICKS_RUNTIME_TARGET, PYTHON_TARGET
+from runtime_config import DATABRICKS_RUNTIME_TARGET, PYTHON_TARGET, RUNTIME_TARGET
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_TYPES = (("embeddings", "embedding", "sentence-transformers"), ("transformers", "transformer", "transformers"))
@@ -38,6 +38,32 @@ def read_metadata(path: Path, folder_name: str, expected_type: str, expected_fra
     return metadata
 
 
+def require_compatible_embedding_export(folder: Path, metadata: dict[str, object]) -> None:
+    """Reject artifacts exported with an incompatible major dependency version."""
+    if metadata["model_type"] != "embedding":
+        return
+    try:
+        config = json.loads((folder / "config_sentence_transformers.json").read_text(encoding="utf-8"))
+        exported = config["__version__"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise ValueError(f"config_sentence_transformers.json inválido en {folder}: {exc}") from exc
+    environment = metadata.get("export_environment")
+    if not isinstance(environment, dict):
+        raise ValueError(f"metadata sin export_environment auditable: {folder}")
+    for key in ("sentence_transformers", "transformers", "torch"):
+        value = environment.get(key)
+        if not isinstance(value, str) or not value:
+            raise ValueError(f"metadata sin versión de exportación {key}: {folder}")
+    for config_key, target_key in (("sentence_transformers", "sentence_transformers"), ("transformers", "transformers")):
+        declared = str(exported.get(config_key, ""))
+        target = RUNTIME_TARGET[target_key]
+        if not declared or declared.split(".", 1)[0] != target.split(".", 1)[0]:
+            raise ValueError(
+                f"artefacto no publicable: {folder} declara {config_key}={declared or 'ausente'} "
+                f"y el runtime objetivo usa {target}. Reexporte con requirements-staging.txt."
+            )
+
+
 def main() -> int:
     models: list[dict[str, object]] = []
     try:
@@ -55,6 +81,7 @@ def main() -> int:
                 if not validation_path.is_file():
                     raise ValueError(f"modelo incompleto: falta {validation_path}")
                 metadata = read_metadata(metadata_path, folder.name, model_type, framework)
+                require_compatible_embedding_export(folder, metadata)
                 files = []
                 paths = sorted((p for p in folder.rglob("*") if p.is_file()), key=lambda item: item.relative_to(folder).as_posix())
                 for path in paths:

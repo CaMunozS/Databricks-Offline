@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from integrity import lfs_pointers
+from runtime_config import python_minor_warning
 
 
 def preflight(model_path: Path) -> None:
@@ -14,8 +15,8 @@ def preflight(model_path: Path) -> None:
     print("PREFLIGHT")
     print(f"Python: {sys.version.split()[0]}")
     print(f"DATABRICKS_RUNTIME_VERSION: {runtime}")
-    if runtime != "local" and "17.3" in runtime and "-cpu-ml-" not in runtime:
-        raise RuntimeError("Runtime estándar detectado: requiere ML Runtime; no intente pip install porque el cluster no tiene salida a PyPI.")
+    # DATABRICKS_RUNTIME_VERSION vale simplemente "17.3" tanto para Runtime
+    # estándar como ML. La capacidad real se comprueba con los paquetes abajo.
     for package in ("torch", "transformers", "sentence-transformers"):
         try:
             print(f"{package}: {importlib.metadata.version(package)}")
@@ -30,4 +31,12 @@ def preflight(model_path: Path) -> None:
     pointers = lfs_pointers(model_path)
     if pointers:
         raise RuntimeError(f"Puntero Git LFS detectado: {pointers[0]}. Ejecute git lfs pull.")
+    import json
+    try:
+        metadata = json.loads((model_path / "model-metadata.json").read_text(encoding="utf-8"))
+        warning = python_minor_warning(metadata.get("python_target"))
+        if warning:
+            print(warning)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"model-metadata.json inválido: {exc}") from exc
     print("PREFLIGHT OK")

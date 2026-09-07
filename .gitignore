@@ -1,8 +1,10 @@
 .venv/
+.stage312/
+.python3123/
+.python3123-embed.zip
 __pycache__/
 *.pyc
 .pytest_cache/
 .idea/
 .vscode/
 .DS_Store
-

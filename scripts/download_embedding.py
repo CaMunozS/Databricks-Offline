@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from model_registry import review_model
 from notebook_factory import create_validation_notebook
-from runtime_config import PYTHON_TARGET, require_target_python
+from runtime_config import PYTHON_TARGET, current_runtime, require_target_python
 from validate_notebook import execute_notebook
 
 
@@ -26,12 +26,13 @@ def main() -> int:
     parser.add_argument("--model", required=True, help="Hugging Face model identifier")
     parser.add_argument("--name", required=True, help="Local folder name")
     parser.add_argument("--revision", default=None, help="Optional Hugging Face revision")
+    parser.add_argument("--replace", action="store_true", help="Reexporta y reemplaza una carpeta existente tras validar.")
     args = parser.parse_args()
     if not args.name or Path(args.name).name != args.name or args.name in {".", ".."}:
         print("ERROR: --name debe ser un nombre de carpeta simple.", file=sys.stderr)
         return 2
     destination = Path(__file__).resolve().parents[1] / "models" / "embeddings" / args.name
-    if destination.exists():
+    if destination.exists() and not args.replace:
         print(f"ERROR: el destino ya existe: {destination}", file=sys.stderr)
         return 2
     staging = destination.parent / f".{args.name}.partial-{uuid4().hex}"
@@ -54,6 +55,8 @@ def main() -> int:
             "framework": "sentence-transformers",
             "license": reviewed.license,
             "python_target": PYTHON_TARGET,
+            "databricks_runtime_supported": "17.3 ML Runtime (Python 3.12.3)",
+            "export_environment": current_runtime(),
             "downloaded_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "validation": {"status": "pending"},
         }
@@ -63,7 +66,17 @@ def main() -> int:
         metadata["validation"] = {"status": "passed"}
         metadata["validation_timestamp_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         (staging / "model-metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        staging.replace(destination)
+        if destination.exists():
+            backup = destination.parent / f".{args.name}.backup-{uuid4().hex}"
+            destination.replace(backup)
+            try:
+                staging.replace(destination)
+            except Exception:
+                backup.replace(destination)
+                raise
+            shutil.rmtree(backup)
+        else:
+            staging.replace(destination)
     except Exception as exc:
         if staging.exists():
             shutil.rmtree(staging)

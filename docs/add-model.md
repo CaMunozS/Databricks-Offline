@@ -20,7 +20,7 @@ git commit -m "Add embedding model <nombre-modelo>"
 1. Confirme que `python --version` muestra exactamente Python 3.12.3 y active el entorno de staging.
 2. Descargue con `download_embedding.py` o `download_transformer.py`.
 3. Revise `model-metadata.json`, licencia, origen, revisión y archivos transportados.
-4. Confirme que `python_target` sea `3.12.3`.
+4. Confirme que `python_target` sea `>=3.11,<3.13` y que el entorno de exportación registrado corresponda exactamente a Python 3.12.3.
 5. Ejecute la validación offline y el `validation.ipynb` generado dentro de la carpeta del modelo.
 6. Genere el manifest con `generate_manifest.py`.
 7. Verifique el manifest con `verify_manifest.py`.
@@ -28,6 +28,6 @@ git commit -m "Add embedding model <nombre-modelo>"
 9. Ejecute `git commit` con un mensaje descriptivo.
 10. Haga `git push` manualmente cuando corresponda; este proyecto nunca hace push automático.
 
-Un modelo que haya sido validado previamente con Python 3.11 debe revalidarse con Python 3.12.3; no cambie la metadata manualmente sin ejecutar nuevamente el notebook.
+Un modelo que haya sido validado previamente con otra pila debe reexportarse y revalidarse con Python 3.12.3, `sentence-transformers==4.0.1`, `transformers==4.51.3` y `torch==2.7.0+cpu`; no cambie la metadata manualmente sin ejecutar nuevamente el notebook. La evidencia generada con versiones distintas del runtime objetivo no prueba compatibilidad.
 
 No habilite `trust_remote_code=True` automáticamente. Un modelo que requiera código remoto debe evaluarse y aprobarse explícitamente.
