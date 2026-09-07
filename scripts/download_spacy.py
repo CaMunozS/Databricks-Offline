@@ -35,7 +35,10 @@ def main() -> int:
         nlp = spacy.load(name)
         package_meta = nlp.meta
         staging = destination.parent / f".{name}.partial-{uuid4().hex}"
-        model_dirs = sorted(path for path in package_root.glob(f"{name}-*") if path.is_dir())
+        model_version = str(package_meta.get("version", ""))
+        model_dirs = sorted(
+            path for path in package_root.glob(f"{name}-{model_version}") if path.is_dir()
+        )
         if len(model_dirs) != 1:
             raise ValueError(f"No se encontró una única carpeta de datos para {name}.")
         shutil.copytree(model_dirs[0], staging)
