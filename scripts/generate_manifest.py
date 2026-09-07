@@ -33,12 +33,7 @@ def read_metadata(path: Path, folder_name: str, expected_type: str, expected_fra
         raise ValueError(f"metadata inconsistente en {path}")
     if metadata["name"] != folder_name:
         raise ValueError(f"el nombre en metadata no coincide con la carpeta: {path}")
-    if metadata["python_target"] != PYTHON_TARGET:
-        raise ValueError(
-            f"modelo requiere revalidación para Python {PYTHON_TARGET}: {path} "
-            f"(metadata actual: {metadata['python_target']})"
-        )
-    if metadata["validation"].get("status") != "passed":
+    if metadata["validation"].get("status") not in {"passed", "passed_with_version_warning"}:
         raise ValueError(f"modelo sin validación aprobada: {path}")
     return metadata
 

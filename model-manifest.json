@@ -1,6 +1,7 @@
 {
-  "generated_at_utc": "2026-09-06T20:53:49.648226Z",
-  "python_target": "3.11",
+  "generated_at_utc": "2026-09-06T23:18:02.965693Z",
+  "python_target": ">=3.11,<3.12",
+  "databricks_runtime_target": "17.3 ML Runtime (Python 3.12.3)",
   "models": [
     {
       "name": "paraphrase-multilingual-MiniLM-L12-v2",
@@ -29,8 +30,8 @@
         },
         {
           "path": "model-metadata.json",
-          "bytes": 346,
-          "sha256": "20026c02b728800695aab4c01030bcda62cc6e0d87e4d642e7f546f8abc85706"
+          "bytes": 514,
+          "sha256": "bdd0473a92cfaee9c1bd9f8ca33ad5aaa7bb6eae94ac1b92f385b8d953cc0cec"
         },
         {
           "path": "model.safetensors",
@@ -59,8 +60,8 @@
         },
         {
           "path": "validation.ipynb",
-          "bytes": 18214,
-          "sha256": "9489f09fcd8a0d815ee877ca6435ce8814fdfcdb2d2f7d835432479656a396b9"
+          "bytes": 21138,
+          "sha256": "8925b4fa246121553dcd696569853f09f78d9c9316543149d910490533f41330"
         }
       ]
     }

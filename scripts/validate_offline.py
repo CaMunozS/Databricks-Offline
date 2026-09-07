@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from integrity import lfs_pointers
+from preflight import preflight
 
 
 def main() -> int:
@@ -24,6 +25,11 @@ def main() -> int:
     pointers = lfs_pointers(path)
     if pointers:
         print(f"ERROR: puntero Git LFS detectado: {pointers[0]}. Ejecute git lfs pull.", file=sys.stderr)
+        return 2
+    try:
+        preflight(path)
+    except (RuntimeError, PermissionError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 2
     try:
         if args.type == "embedding":
