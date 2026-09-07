@@ -13,6 +13,7 @@ MODEL_TYPES = (
     ("embeddings", "embedding", "sentence-transformers"),
     ("transformers", "transformer", "transformers"),
     ("spacy", "spacy", "spacy"),
+    ("libs", "lib", "pip"),
 )
 
 

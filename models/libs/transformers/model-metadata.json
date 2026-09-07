@@ -1,0 +1,23 @@
+{
+  "name": "transformers",
+  "model_type": "lib",
+  "source": "PyPI:transformers",
+  "revision": "4.51.3",
+  "framework": "pip",
+  "license": "Apache 2.0 License",
+  "python_target": ">=3.11,<3.13",
+  "wheel_file": "transformers-4.51.3-py3-none-any.whl",
+  "import_name": "transformers",
+  "reason": "Wheel universal para la instalacion offline de transformers==4.51.3 en Databricks Runtime 17.3 LTS; sus dependencias binarias se transportan y validan por separado.",
+  "install_hint": "%pip install /Volumes/<catalog>/<schema>/<volume>/models/libs/transformers/transformers-4.51.3-py3-none-any.whl --no-deps --force-reinstall\ndbutils.library.restartPython()",
+  "databricks_runtime_supported": "17.3 ML Runtime (Python 3.12.3)",
+  "export_environment": {
+    "python": "3.12.3",
+    "pip": "25.0.1"
+  },
+  "downloaded_at_utc": "2026-09-07T17:30:08.167759Z",
+  "validation": {
+    "status": "passed"
+  },
+  "validation_timestamp_utc": "2026-09-07T17:30:53.511474Z"
+}

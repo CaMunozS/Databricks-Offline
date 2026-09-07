@@ -27,8 +27,8 @@ def read_metadata(model_dir: Path) -> dict[str, object]:
     # ejecutar la validación; la coincidencia definitiva la exige el manifest.
     if not model_dir.name.startswith(".") and metadata["name"] != model_dir.name:
         raise ValueError("El nombre de metadata no coincide con la carpeta del modelo.")
-    if metadata["model_type"] not in {"embedding", "transformer", "spacy"}:
-        raise ValueError("model_type debe ser embedding, transformer o spacy.")
+    if metadata["model_type"] not in {"embedding", "transformer", "spacy", "lib"}:
+        raise ValueError("model_type debe ser embedding, transformer, spacy o lib.")
     return metadata
 
 
@@ -213,17 +213,84 @@ def spacy_cells() -> list[object]:
     ]
 
 
+def lib_cells(model_name: str) -> list[object]:
+    return [
+        new_markdown_cell("# Validaci\u00f3n offline de librer\u00eda Python\n\nEste notebook valida un wheel local sin usar Internet."),
+        new_code_cell(
+            "from pathlib import Path\nimport json\nimport os\nimport sys\nimport zipfile\nfrom email.parser import Parser\n\n"
+            "def resolve_model_path():\n"
+            "    configured = os.environ.get('MODEL_PATH', '').strip()\n"
+            "    if configured:\n        return Path(configured).expanduser().resolve()\n"
+            "    if os.environ.get('DATABRICKS_RUNTIME_VERSION'):\n"
+            "        try:\n            dbutils.widgets.text('model_path', '')\n            configured = dbutils.widgets.get('model_path').strip()\n"
+            "        except Exception:\n            configured = ''\n"
+            "        if configured:\n            return Path(configured).resolve()\n"
+            "        raise RuntimeError('En Databricks indique MODEL_PATH o el widget model_path con una ruta /Volumes/...')\n"
+            "    working_directory = Path.cwd().resolve()\n"
+            "    if (working_directory / 'model-metadata.json').is_file():\n        return working_directory\n"
+            f"    relative_model = Path('models') / 'libs' / '{model_name}'\n"
+            "    for root in (working_directory, *working_directory.parents):\n"
+            "        candidate = root / relative_model\n"
+            "        if (candidate / 'model-metadata.json').is_file():\n            return candidate.resolve()\n"
+            "    raise RuntimeError('No se encontr\u00f3 la carpeta de la librer\u00eda. Ejecute desde el repositorio o defina MODEL_PATH.')\n\n"
+            "MODEL_PATH = resolve_model_path()\n"
+            "metadata = json.loads((MODEL_PATH / 'model-metadata.json').read_text(encoding='utf-8'))\n"
+            "assert metadata['model_type'] == 'lib', 'Tipo de artefacto incorrecto'\n"
+            "wheel = MODEL_PATH / metadata['wheel_file']\n"
+            "assert wheel.is_file(), f'Wheel faltante: {wheel}'\n"
+            "LFS_PREFIX = b'version https://git-lfs.github.com/spec/v1'\n"
+            "with wheel.open('rb') as handle:\n    assert not handle.read(len(LFS_PREFIX)).startswith(LFS_PREFIX), 'Puntero Git LFS detectado; ejecute git lfs pull.'\n"
+            "print(f'Library path: {MODEL_PATH}')\nprint(f'wheel: {wheel.name}')\nprint(f'python: {sys.version.split()[0]}')"
+        ),
+        new_code_cell(
+            "with zipfile.ZipFile(wheel) as archive:\n"
+            "    metadata_members = [name for name in archive.namelist() if name.endswith('.dist-info/METADATA')]\n"
+            "    assert len(metadata_members) == 1, f'METADATA ambiguo o faltante: {metadata_members}'\n"
+            "    wheel_metadata = Parser().parsestr(archive.read(metadata_members[0]).decode('utf-8'))\n"
+            "assert wheel_metadata['Name'] == metadata['name'], 'Name del wheel no coincide con metadata'\n"
+            "assert wheel_metadata['Version'] == metadata['revision'], 'Version del wheel no coincide con metadata'\n"
+            "print(f\"Wheel METADATA: Name={wheel_metadata['Name']} Version={wheel_metadata['Version']}\")"
+        ),
+        new_code_cell(
+            "import importlib\nimport importlib.metadata\nimport subprocess\nimport tempfile\n\n"
+            "with tempfile.TemporaryDirectory(prefix='offline-lib-validation-') as temporary:\n"
+            "    target = Path(temporary) / 'site-packages'\n"
+            "    subprocess.run([sys.executable, '-m', 'pip', 'install', str(wheel), '--no-deps', '--target', str(target)], check=True)\n"
+            "    sys.path.insert(0, str(target))\n"
+            "    try:\n"
+            "        importlib.invalidate_caches()\n"
+            "        for module_name in list(sys.modules):\n"
+            "            if module_name == metadata['import_name'] or module_name.startswith(metadata['import_name'] + '.'):\n"
+            "                del sys.modules[module_name]\n"
+            "        module = __import__(metadata['import_name'])\n"
+            "        distributions = importlib.metadata.distributions(path=[str(target)])\n"
+            "        installed_version = next(\n"
+            "            distribution.version for distribution in distributions\n"
+            "            if distribution.metadata['Name'] == metadata['name']\n"
+            "        )\n"
+            "        assert installed_version == metadata['revision'], f'Versi\u00f3n instalada inesperada: {installed_version}'\n"
+            "        print(f\"import: {metadata['import_name']} {installed_version}\")\n"
+            "    finally:\n        sys.path.remove(str(target))"
+        ),
+    ]
+
+
 def create_validation_notebook(model_dir: Path) -> Path:
     model_dir = model_dir.resolve()
     metadata = read_metadata(model_dir)
     model_type = str(metadata["model_type"])
-    cells = base_cells(model_type, model_dir.name)
-    cells.extend(
-        embedding_cells() if model_type == "embedding"
-        else transformer_cells() if model_type == "transformer"
-        else spacy_cells()
-    )
+    if model_type == "lib":
+        cells = lib_cells(model_dir.name)
+    else:
+        cells = base_cells(model_type, model_dir.name)
+        cells.extend(
+            embedding_cells() if model_type == "embedding"
+            else transformer_cells() if model_type == "transformer"
+            else spacy_cells()
+        )
     cells.append(new_code_cell("print('VALIDATION OK')\nprint('Modelo cargado y ejecutado usando únicamente archivos locales.')"))
+    if model_type == "lib":
+        cells[-1].source = "print('VALIDATION OK')\nprint('Libreria instalada y verificada usando unicamente archivos locales.')"
     notebook = new_notebook(
         cells=cells,
         metadata={

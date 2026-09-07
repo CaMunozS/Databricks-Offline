@@ -1,0 +1,23 @@
+{
+  "name": "sentence-transformers",
+  "model_type": "lib",
+  "source": "PyPI:sentence-transformers",
+  "revision": "4.0.1",
+  "framework": "pip",
+  "license": "Apache 2.0",
+  "python_target": ">=3.11,<3.13",
+  "wheel_file": "sentence_transformers-4.0.1-py3-none-any.whl",
+  "import_name": "sentence_transformers",
+  "reason": "Wheel universal para la instalacion offline de sentence-transformers==4.0.1 en Databricks Runtime 17.3 LTS; torch y las dependencias binarias se transportan y validan por separado.",
+  "install_hint": "%pip install /Volumes/<catalog>/<schema>/<volume>/models/libs/sentence-transformers/sentence_transformers-4.0.1-py3-none-any.whl --no-deps --force-reinstall\ndbutils.library.restartPython()",
+  "databricks_runtime_supported": "17.3 ML Runtime (Python 3.12.3)",
+  "export_environment": {
+    "python": "3.12.3",
+    "pip": "25.0.1"
+  },
+  "downloaded_at_utc": "2026-09-07T17:30:58.850631Z",
+  "validation": {
+    "status": "passed"
+  },
+  "validation_timestamp_utc": "2026-09-07T17:31:36.075996Z"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "confection",
+  "model_type": "lib",
+  "source": "PyPI:confection",
+  "revision": "1.3.3",
+  "framework": "pip",
+  "license": "MIT",
+  "python_target": ">=3.11,<3.13",
+  "wheel_file": "confection-1.3.3-py3-none-any.whl",
+  "import_name": "confection",
+  "reason": "thinc>=8.3 requiere confection>=1.1,<2.0; el Databricks Runtime 17.3 ML (cluster 0213-160424-3cn58v4p) trae preinstalado confection 0.1.5, lo que rompe import spacy con ModuleNotFoundError: No module named confection.validation",
+  "install_hint": "%pip install /Volumes/<catalog>/<schema>/<volume>/models/libs/confection/confection-1.3.3-py3-none-any.whl --no-deps --force-reinstall\ndbutils.library.restartPython()",
+  "databricks_runtime_supported": "17.3 ML Runtime (Python 3.12.3)",
+  "export_environment": {
+    "python": "3.12.3",
+    "pip": "25.0.1"
+  },
+  "downloaded_at_utc": "2026-09-07T17:15:14.085587Z",
+  "validation": {
+    "status": "passed"
+  },
+  "validation_timestamp_utc": "2026-09-07T17:15:18.862619Z"
+}
