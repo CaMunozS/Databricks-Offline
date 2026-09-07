@@ -1,0 +1,22 @@
+{
+  "name": "distiluse-base-multilingual-cased-v2",
+  "model_type": "embedding",
+  "source": "sentence-transformers/distiluse-base-multilingual-cased-v2",
+  "revision": "bfe45d0732ca50787611c0fe107ba278c7f3f889",
+  "framework": "sentence-transformers",
+  "license": "apache-2.0",
+  "python_target": ">=3.11,<3.13",
+  "databricks_runtime_supported": "17.3 ML Runtime (Python 3.12.3)",
+  "export_environment": {
+    "python": "3.12.3",
+    "sentence_transformers": "4.0.1",
+    "transformers": "4.51.3",
+    "torch": "2.7.0+cpu",
+    "numpy": "2.1.3"
+  },
+  "downloaded_at_utc": "2026-09-07T13:58:39.829704Z",
+  "validation": {
+    "status": "passed"
+  },
+  "validation_timestamp_utc": "2026-09-07T13:58:51.831939Z"
+}
